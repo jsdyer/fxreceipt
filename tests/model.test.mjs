@@ -1,21 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanLines } from '../web/model.mjs';
-test('trims, removes blanks and preserves first-seen order', () => {
-  assert.deepEqual(cleanLines('  Halifax\nLangley\nHalifax\n\nVancouver  '), {
-    text: 'Halifax\nLangley\nVancouver', count: 3, removed: 1,
-  });
-});
-test('supports Windows and old Mac line endings', () => {
-  assert.equal(cleanLines('a\r\nb\ra').text, 'a\nb');
-});
-test('empty text and whitespace produce an empty result', () => {
-  assert.deepEqual(cleanLines(' \n\t'), { text: '', count: 0, removed: 0 });
-});
-test('preserves case and Unicode', () => {
-  assert.equal(cleanLines('Québec\nquébec\n東京\nQuébec').text, 'Québec\nquébec\n東京');
-});
-test('treats markup as ordinary text', () => {
-  assert.equal(cleanLines('<script>alert(1)</script>\n<script>alert(1)</script>').text, '<script>alert(1)</script>');
-});
-test('rejects non-text input', () => { assert.throws(() => cleanLines(null), TypeError); });
+import {transaction,rateURL,referenceFromAPI,manualReference,compare,importReceipt,csv} from '../web/model.mjs';
+const input=()=>transaction({date:'2026-11-21',base:'usd',quote:'cad',amount:'100',charged:'146.25',note:'Test'},'2026-11-22');
+const ref=()=>manualReference(input(),{date:'2026-11-20',label:'Test reference',rate:'1.425'});
+test('compares direction, percentage denominator and effective rate',()=>{const r=compare(input(),ref());assert.equal(r.calculation.referenceAmount,142.5);assert.equal(r.calculation.effectiveRate,1.4625);assert.equal(r.calculation.difference,3.75);assert.ok(Math.abs(r.calculation.spreadPercent-2.631578947368421)<1e-10);});
+test('a lower actual charge produces a negative difference, not a fee',()=>{const t={...input(),charged:140};const r=compare(t,ref());assert.ok(r.calculation.difference<0);assert.ok(r.calculation.spreadPercent<0);});
+test('rejects malformed, future, same-currency and nonpositive inputs',()=>{for(const patch of [{date:'2026-02-30'},{date:'2026-12-01'},{quote:'USD'},{amount:0},{charged:-1},{amount:'1e5'},{base:'<x>'}])assert.throws(()=>transaction({...input(),...patch},'2026-11-22'));});
+test('request sends currency/date/provider and never amounts or notes',()=>{const u=new URL(rateURL({apiBase:'https://api.frankfurter.dev/v2/'},input(),'boc'));assert.equal(u.pathname,'/v2/providers/boc/rates');assert.deepEqual([...u.searchParams.keys()].sort(),['base','date','expand','quotes']);assert.ok(!u.href.includes('146.25'));});
+test('provider list can expand without adding routes or code',()=>{const u=rateURL({apiBase:'https://rates.example/v2/'},input(),'nbp.b');assert.ok(u.includes('/providers/nbp.b/rates'));assert.throws(()=>rateURL({apiBase:'https://rates.example/v2/'},input(),'../../bad'));});
+test('retains earlier reference dates and provider observation evidence',()=>{const r=referenceFromAPI([{base:'USD',quote:'CAD',date:'2026-11-20',rate:1.425,providers:[{key:'BOC',date:'2026-11-20',rate:1.425}]}],input(),{label:'Test',url:'https://example.com',retrievedAt:'2026-11-22T00:00:00Z'});assert.equal(r.date,'2026-11-20');assert.equal(r.observations.length,1);assert.equal(r.requestedDate,'2026-11-21');});
+test('rejects later, duplicate, mismatched or non-finite rate responses',()=>{const good={base:'USD',quote:'CAD',date:'2026-11-20',rate:1.425};for(const payload of [[],[good,good],[{...good,quote:'EUR'}],[{...good,date:'2026-11-22'}],[{...good,rate:Infinity}]])assert.throws(()=>referenceFromAPI(payload,input(),{}));});
+test('manual rate requires source and on-or-before date',()=>{assert.throws(()=>manualReference(input(),{date:'2026-11-22',rate:1,label:'Source'}));assert.throws(()=>manualReference(input(),{date:'2026-11-20',rate:1,label:''}));});
+test('imports recompute numbers rather than trusting saved output',()=>{const r=compare(input(),ref());r.calculation.difference=999999;const restored=importReceipt(r,'2026-11-22');assert.equal(restored.calculation.difference,3.75);assert.throws(()=>importReceipt({...r,tool:'other'},'2026-11-22'));});
+test('CSV shields text formula inputs while preserving numeric negatives',()=>{const r=compare({...input(),note:'=1+1',charged:140},ref());const output=csv(r);assert.ok(output.includes('"\'=1+1"'));assert.ok(output.includes('"-2.5"'));});
+test('API receipts round-trip source evidence and reject unsafe links',()=>{const reference=referenceFromAPI([{base:'USD',quote:'CAD',date:'2026-11-20',rate:1.425}],input(),{label:'Test',url:'https://api.frankfurter.dev/v2/rates?date=2026-11-21',retrievedAt:'2026-11-22T00:00:00Z',provider:''});const r=compare(input(),reference);assert.equal(importReceipt(r,'2026-11-22').reference.rate,1.425);r.reference.url='javascript:alert(1)';assert.throws(()=>importReceipt(r,'2026-11-22'));});

@@ -1,0 +1,23 @@
+{
+  "apiBase": "https://api.frankfurter.dev/v2/",
+  "defaultPurchaseCurrency": "USD",
+  "defaultSettlementCurrency": "CAD",
+  "defaultProvider": "",
+  "currencyTypes": [
+    "currency"
+  ],
+  "providers": [
+    {
+      "key": "",
+      "name": "Frankfurter blended reference"
+    },
+    {
+      "key": "boc",
+      "name": "Bank of Canada via Frankfurter"
+    },
+    {
+      "key": "ecb",
+      "name": "European Central Bank via Frankfurter"
+    }
+  ]
+}

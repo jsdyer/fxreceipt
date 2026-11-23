@@ -1,16 +1,22 @@
 {
-  "id": "coolcode-tool-template",
-  "title": "CoolCode Tool Starter",
-  "description": "A browser-only example that trims lines and removes exact duplicates.",
-  "category": "security",
-  "tags": ["text", "lines", "duplicates"],
-  "icon": "scan-search",
-  "url": "/coolcode-tool-template/",
-  "source": "https://github.com/jsdyer/coolcode-tool-template",
+  "id": "fxreceipt",
+  "title": "FX Receipt",
+  "description": "Compare a foreign-currency purchase with a dated reference rate and save an inspectable conversion receipt.",
+  "category": "money",
+  "tags": [
+    "currency",
+    "exchange rates",
+    "receipts",
+    "CAD",
+    "reference rates"
+  ],
+  "icon": "receipt-text",
+  "url": "/fxreceipt/",
+  "source": "https://github.com/jsdyer/fxreceipt",
   "hosting": "project",
   "access": "browser",
   "data_info": {
-    "mode": "local",
-    "detail": "The browser reads the text you paste and compares its lines."
+    "mode": "mixed",
+    "detail": "Frankfurter historical reference rates with transaction calculations kept in your browser."
   }
 }

@@ -40,8 +40,33 @@ def metadata(root=ROOT):
     return tool
 
 
+def validate_config(root=ROOT):
+    config = json.loads((root / "web/config.json").read_text(encoding="utf-8"))
+    base = urlsplit(config["apiBase"])
+    if base.scheme != "https" or not base.hostname or base.username or base.password or base.query or base.fragment:
+        raise ValueError("apiBase must be an HTTPS base URL without credentials, query or fragment")
+    for key in ("defaultPurchaseCurrency", "defaultSettlementCurrency"):
+        if not re.fullmatch(r"[A-Z]{3}", config[key]):
+            raise ValueError(f"{key} must be a three-letter uppercase currency code")
+    providers = config["providers"]
+    if not isinstance(providers, list) or not providers:
+        raise ValueError("providers must be a nonempty list")
+    keys = []
+    for provider in providers:
+        key, name = provider["key"], provider["name"]
+        if not isinstance(key, str) or (key and not re.fullmatch(r"[a-zA-Z0-9.-]+", key)) or not isinstance(name, str) or not name.strip():
+            raise ValueError("Provider keys must be safe route components and names nonempty")
+        keys.append(key)
+    if len(set(keys)) != len(keys) or config["defaultProvider"] not in keys:
+        raise ValueError("Provider keys must be unique and include defaultProvider")
+    if not isinstance(config["currencyTypes"], list) or not all(isinstance(v, str) for v in config["currencyTypes"]):
+        raise ValueError("currencyTypes must be a list of strings")
+    return config
+
+
 def build(root=ROOT):
     tool = metadata(root)
+    validate_config(root)
     output = root / "dist"
     if output.is_symlink():
         raise ValueError("dist must not be a symlink")

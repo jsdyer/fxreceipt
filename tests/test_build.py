@@ -5,7 +5,7 @@ import sys
 import tempfile
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from build import ROOT, build, metadata
+from build import ROOT, build, metadata, validate_config
 
 
 class BuildTests(unittest.TestCase):
@@ -47,6 +47,23 @@ class BuildTests(unittest.TestCase):
                 self.assertEqual('/assets/tool-metrics.js' in page, enabled)
                 self.assertEqual(f'https://coolcode.ca/report/?tool={slug}' in page, enabled)
                 self.assertNotIn("{{", page)
+
+    def test_provider_expansion_is_included_without_code_changes(self):
+        path = self.root / "web/config.json"
+        config = json.loads(path.read_text())
+        config["providers"].append({"key": "nbp.b", "name": "Additional reference"})
+        config["defaultProvider"] = "nbp.b"
+        path.write_text(json.dumps(config))
+        build(self.root)
+        self.assertEqual(json.loads((self.root / "dist/config.json").read_text())["providers"][-1]["key"], "nbp.b")
+
+    def test_unsafe_or_duplicate_provider_configuration_is_rejected(self):
+        path = self.root / "web/config.json"
+        config = json.loads(path.read_text())
+        config["providers"].append(config["providers"][0])
+        path.write_text(json.dumps(config))
+        with self.assertRaises(ValueError):
+            validate_config(self.root)
 
     def test_url_matches_tool_id(self):
         self.edit(url="/different/")
