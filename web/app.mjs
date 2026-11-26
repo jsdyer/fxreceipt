@@ -1,3 +1,4 @@
+import {bankHistory, seriesFor} from './boc.mjs';
 import {transaction, rateURL, referenceFromAPI, manualReference, compare, importReceipt, money, csv} from './model.mjs';
 const $ = id => document.getElementById(id);
 const localToday = () => {const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
@@ -7,7 +8,7 @@ function status(text,error=false){$('status').textContent=text;$('status').class
 function rawInput(){return {date:$('date').value,base:$('base').value,quote:$('quote').value,amount:$('amount').value,charged:$('charged').value,note:$('note').value};}
 function resetResult(){receipt=null;$('empty-result').hidden=false;$('result').hidden=true;$('receipt-tag').textContent='READY WHEN YOU ARE';}
 function invalidate(){revision++;controller?.abort();$('calculate').disabled=false;resetResult();status('Inputs changed. Compare again to update your receipt.');}
-function showMode(){const manual=$('mode').value==='manual';$('manual-fields').hidden=!manual;$('api-fields').hidden=manual;for(const id of ['manual-rate','manual-date','manual-source'])$(id).required=manual;$('rate-direction').textContent=`Enter ${$('quote').value.toUpperCase() || 'charge currency'} per 1 ${$('base').value.toUpperCase() || 'purchase currency'}.`;}
+function showMode(){const manual=$('mode').value==='manual';$('manual-fields').hidden=!manual;$('api-fields').hidden=$('mode').value!=='api';for(const id of ['manual-rate','manual-date','manual-source'])$(id).required=manual;$('rate-direction').textContent=`Enter ${$('quote').value.toUpperCase() || 'charge currency'} per 1 ${$('base').value.toUpperCase() || 'purchase currency'}.`;}
 function render(r,imported=false){
  receipt=r;const t=r.transaction,c=r.calculation,ref=r.reference;
  $('empty-result').hidden=true;$('result').hidden=false;$('receipt-tag').textContent=imported?'SAVED RECEIPT':ref.kind==='manual'?'MANUAL REFERENCE':'DATED REFERENCE';
@@ -38,7 +39,16 @@ async function calculate(event){
  try{
  const input=transaction(rawInput(),localToday());let reference;
  if($('mode').value==='manual')reference=manualReference(input,{rate:$('manual-rate').value,date:$('manual-date').value,label:$('manual-source').value});
- else{
+ else if ($('mode').value === 'boc') {
+   const history = await bankHistory(input.date, AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]));
+   if (current !== revision) return;
+   const last = seriesFor(history.rows, input.base, input.quote, input.date).at(-1);
+   const observation = {base:input.base, quote:input.quote, rate:last.rate, date:last.date};
+   reference = referenceFromAPI([observation], input, {
+     provider:'boc-valet', label:history.retained ? 'Bank of Canada · saved observations' : 'Bank of Canada · daily observations',
+     url:history.source, retrievedAt:history.retrievedAt
+   });
+ } else{
  if(!config)throw new Error('Configuration could not load. Reload the page or use a manual reference.');
  const provider=$('provider').value,url=rateURL(config,input,provider);$('calculate').disabled=true;status('Looking up the reference rate. Your amounts stay in this tab…');
  const timer=setTimeout(()=>controller?.abort(),20000);
@@ -59,7 +69,7 @@ $('save-json').addEventListener('click',()=>{if(receipt)download(JSON.stringify(
 $('save-csv').addEventListener('click',()=>{if(receipt)download(csv(receipt),'text/csv;charset=utf-8','csv');});
 $('import').addEventListener('change',async()=>{const file=$('import').files[0];if(!file)return;invalidate();const current=revision;try{if(file.size>1000000)throw new Error('Receipt files must be smaller than 1 MB.');const r=importReceipt(JSON.parse(await file.text()),localToday());if(current!==revision)return;for(const [id,value]of Object.entries({date:r.transaction.date,base:r.transaction.base,quote:r.transaction.quote,amount:r.transaction.amount,charged:r.transaction.charged,note:r.transaction.note}))$(id).value=value;
  // Imported evidence stays visible without requesting its source; compare again uses the chosen mode.
- if(r.reference.kind==='manual'){$('mode').value='manual';$('manual-rate').value=r.reference.rate;$('manual-date').value=r.reference.date;$('manual-source').value=r.reference.label;}else{$('mode').value='api';if([...$('provider').options].some(o=>o.value===r.reference.provider))$('provider').value=r.reference.provider;}
+ if(r.reference.kind==='manual'){$('mode').value='manual';$('manual-rate').value=r.reference.rate;$('manual-date').value=r.reference.date;$('manual-source').value=r.reference.label;}else{$('mode').value=r.reference.provider==='boc-valet'?'boc':'api';if([...$('provider').options].some(o=>o.value===r.reference.provider))$('provider').value=r.reference.provider;}
  showMode();render(r,true);
  }catch(error){status(`Could not open this receipt: ${error.message}`,true);}finally{$('import').value='';}});
 $('date').value=localToday();$('date').max=localToday();$('manual-date').value=localToday();$('manual-date').max=localToday();showMode();
@@ -67,7 +77,7 @@ async function start(){try{
  const response=await fetch(new URL('./config.json', import.meta.url));if(!response.ok)throw new Error('Configuration unavailable.');config=await response.json();
  if(!Array.isArray(config.providers)||!config.providers.length)throw new Error('Add at least one rate source in config.json.');
  $('provider').replaceChildren();for(const p of config.providers){if(typeof p.key!=='string'||typeof p.name!=='string')throw new Error('Invalid provider configuration.');const option=document.createElement('option');option.value=p.key;option.textContent=p.name;$('provider').append(option);}
- if ($('mode').value !== 'manual') { $('base').value=config.defaultPurchaseCurrency; $('quote').value=config.defaultSettlementCurrency; }
+ if ($('mode').value === 'api') { $('base').value=config.defaultPurchaseCurrency; $('quote').value=config.defaultSettlementCurrency; }
  $('provider').value=config.defaultProvider;showMode();
  const catalogURL=new URL('currencies?scope=all',config.apiBase.endsWith('/')?config.apiBase:`${config.apiBase}/`).href;
  const catalog=await fetchJSON(catalogURL,AbortSignal.timeout(15000));

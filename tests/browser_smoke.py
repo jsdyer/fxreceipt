@@ -43,7 +43,12 @@ def main():
                 assert page.locator("#quick-quote").input_value() == "INR"
                 page.locator("#quick-transfer").click()
                 assert page.locator("#base").input_value() == "CAD"
-                assert page.locator("#manual-rate").input_value() == "50"
+                assert page.locator("#mode").input_value() == "boc"
+                page.locator("#charged").fill("5100")
+                page.locator("#calculate").click()
+                page.locator("#result").wait_for(state="visible")
+                assert page.locator("#r-rate").inner_text() == "50"
+                assert "Bank of Canada" in page.locator("#r-source").inner_text()
                 page.goto(f"http://127.0.0.1:{server.server_port}/fxreceipt/")
                 page.wait_for_function("document.getElementById('currencies').options.length === 3")
                 page.locator("#amount").fill("100")

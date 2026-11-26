@@ -37,3 +37,17 @@ export function seriesFor(rows, base, quote, date) {
   if (!points.length) throw new Error('No matching Bank of Canada observations are available for that date. Try a later date.');
   return points;
 }
+
+export async function bankHistory(date, signal) {
+  const source = historyURL(date);
+  try {
+    const response = await fetch(source, {signal, credentials:'omit', referrerPolicy:'no-referrer'});
+    if (!response.ok) throw new Error('Source unavailable');
+    return {rows:observations(await response.json()), source, retained:false, retrievedAt:new Date().toISOString()};
+  } catch {
+    const response = await fetch(new URL('./boc-snapshot.json', import.meta.url));
+    if (!response.ok) throw new Error('Live and saved Bank of Canada observations are unavailable.');
+    const snapshot = await response.json();
+    return {rows:snapshot.rows, source:snapshot.source, retained:true, retrievedAt:snapshot.retrieved};
+  }
+}

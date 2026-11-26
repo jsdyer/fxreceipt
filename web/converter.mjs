@@ -1,4 +1,4 @@
-import {historyURL, observations, seriesFor} from './boc.mjs';
+import {bankHistory, seriesFor} from './boc.mjs';
 import {money} from './model.mjs';
 
 const el = id => document.getElementById(id);
@@ -37,11 +37,8 @@ function render() {
       el('base').value = base;
       el('quote').value = quote;
       el('date').value = el('quick-date').value;
-      el('mode').value = 'manual';
+      el('mode').value = 'boc';
       el('mode').dispatchEvent(new Event('change', {bubbles:true}));
-      el('manual-date').value = last.date;
-      el('manual-rate').value = String(last.rate);
-      el('manual-source').value = 'Bank of Canada · ' + source;
       el('charged').focus();
     };
     const values = points.map(point => point.rate);
@@ -62,32 +59,19 @@ async function loadDate() {
   controller = request;
   if (!date || date > today) { reset('Choose today or an earlier date.'); return; }
   if (loadedDate === date && rows.length && !retained) { render(); return; }
-  let url;
-  try { url = historyURL(date); } catch (error) { reset(error.message); return; }
   reset('Loading Bank of Canada observations…');
   const timer = setTimeout(() => request.abort(), 10000);
   try {
-    const response = await fetch(url, {signal:request.signal, credentials:'omit', referrerPolicy:'no-referrer'});
-    if (!response.ok) throw new Error('Source unavailable');
-    const current = observations(await response.json());
+    const history = await bankHistory(date,request.signal);
     if (request !== controller) return;
-    rows = current;
-    source = url;
-    retained = false;
-  } catch {
-    try {
-      const response = await fetch(new URL('./boc-snapshot.json', import.meta.url));
-      if (!response.ok) throw new Error();
-      const snapshot = await response.json();
-      if (request !== controller) return;
-      // Never present a frozen edition as current or use its observations after the requested date.
-      rows = snapshot.rows;
-      source = snapshot.source;
-      retained = true;
-    } catch {
-      if (request === controller) { loadedDate = ''; rows = []; reset('Live and saved Bank of Canada observations are unavailable.'); }
-      return;
+    rows = history.rows;
+    source = history.source;
+    retained = history.retained;
+  } catch (error) {
+    if (request === controller) {
+      loadedDate = ''; rows = []; reset(error.message);
     }
+    return;
   } finally { clearTimeout(timer); }
   if (request !== controller) return;
   loadedDate = date;
