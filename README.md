@@ -3,10 +3,13 @@
 [Use FX Receipt](https://coolcode.ca/fxreceipt/) to compare a foreign purchase with a historical reference rate. Enter the original amount and currency, the final posted charge and its currency, and a comparison date. CAD is a default, not a restriction.
 
 <!-- coolcode:guide -->
+Convert at the Bank of Canada rate for the selected date and compare the result with the final posted charge. Export the receipt with its source and observation date.
+<!-- /coolcode:guide -->
+
 [USD to CAD](https://coolcode.ca/fxreceipt/usd-to-cad/) and [CAD to INR](https://coolcode.ca/fxreceipt/cad-to-inr/) open with a dated C$ or US$100 example. The converter reads Bank of Canada daily observations over a 90-day window, shows the actual rate date, and offers a saved, labelled fallback when the source cannot respond. Use “Compare this amount with my card charge” to carry the reference to the receipt form. Public currency series and dates leave the browser. Entered amounts and notes stay in the tab.
 
 Enter your purchase and final posted charge, then compare with a dated reference. A positive difference is above that benchmark; it does not prove the difference was a separately charged fee. Save JSON to retain the exact rate and reopen the receipt later.
-<!-- /coolcode:guide -->
+
 
 ## Using it
 
