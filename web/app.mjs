@@ -64,10 +64,11 @@ $('import').addEventListener('change',async()=>{const file=$('import').files[0];
  }catch(error){status(`Could not open this receipt: ${error.message}`,true);}finally{$('import').value='';}});
 $('date').value=localToday();$('date').max=localToday();$('manual-date').value=localToday();$('manual-date').max=localToday();showMode();
 async function start(){try{
- const response=await fetch('./config.json');if(!response.ok)throw new Error('Configuration unavailable.');config=await response.json();
+ const response=await fetch(new URL('./config.json', import.meta.url));if(!response.ok)throw new Error('Configuration unavailable.');config=await response.json();
  if(!Array.isArray(config.providers)||!config.providers.length)throw new Error('Add at least one rate source in config.json.');
  $('provider').replaceChildren();for(const p of config.providers){if(typeof p.key!=='string'||typeof p.name!=='string')throw new Error('Invalid provider configuration.');const option=document.createElement('option');option.value=p.key;option.textContent=p.name;$('provider').append(option);}
- $('base').value=config.defaultPurchaseCurrency;$('quote').value=config.defaultSettlementCurrency;$('provider').value=config.defaultProvider;showMode();
+ if ($('mode').value !== 'manual') { $('base').value=config.defaultPurchaseCurrency; $('quote').value=config.defaultSettlementCurrency; }
+ $('provider').value=config.defaultProvider;showMode();
  const catalogURL=new URL('currencies?scope=all',config.apiBase.endsWith('/')?config.apiBase:`${config.apiBase}/`).href;
  const catalog=await fetchJSON(catalogURL,AbortSignal.timeout(15000));
  if(!Array.isArray(catalog))throw new Error('Currency suggestions unavailable.');

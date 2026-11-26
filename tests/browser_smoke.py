@@ -33,6 +33,17 @@ def main():
                         data = [{"base":"USD","quote":"CAD","date":"2026-01-02","rate":1.425,"providers":[{"key":"TEST","date":"2026-01-02","rate":1.425}]}]
                     route.fulfill(status=200,content_type="application/json",body=json.dumps(data),headers={"Access-Control-Allow-Origin":"*"})
                 page.route("https://api.frankfurter.dev/**", rate_response)
+                def boc(route):
+                    assert "amount" not in route.request.url
+                    route.fulfill(json={"observations":[{"d":"2026-01-02","FXUSDCAD":{"v":"1.5"},"FXINRCAD":{"v":"0.02"}}]})
+                page.route("https://www.bankofcanada.ca/valet/**", boc)
+                page.goto(f"http://127.0.0.1:{server.server_port}/fxreceipt/cad-to-inr/")
+                page.wait_for_function("document.getElementById('quick-total').textContent.includes('5,000')")
+                assert page.locator("#quick-base").input_value() == "CAD"
+                assert page.locator("#quick-quote").input_value() == "INR"
+                page.locator("#quick-transfer").click()
+                assert page.locator("#base").input_value() == "CAD"
+                assert page.locator("#manual-rate").input_value() == "50"
                 page.goto(f"http://127.0.0.1:{server.server_port}/fxreceipt/")
                 page.wait_for_function("document.getElementById('currencies').options.length === 3")
                 page.locator("#amount").fill("100")

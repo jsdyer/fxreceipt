@@ -1,7 +1,7 @@
 {
   "id": "fxreceipt",
-  "title": "FX Receipt",
-  "description": "Compare a foreign-currency purchase with a dated reference rate and save an inspectable conversion receipt.",
+  "title": "Currency Converter & Card Charge Comparison",
+  "description": "Convert USD, CAD or INR at the Bank of Canada daily reference rate, check the dated history and compare it with the amount charged to your card.",
   "category": "money",
   "tags": [
     "currency",
@@ -17,6 +17,6 @@
   "access": "browser",
   "data_info": {
     "mode": "mixed",
-    "detail": "Frankfurter historical reference rates with transaction calculations kept in your browser."
+    "detail": "Bank of Canada daily observations for CAD, USD and INR, plus Frankfurter reference rates for the card comparison. Amounts stay local."
   }
 }
