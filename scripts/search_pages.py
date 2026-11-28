@@ -38,8 +38,8 @@ def render_pages(stage, tool, pages):
 
 PAGES = [('',
   'Currency Converter & Card Charge Comparison',
-  'Convert USD, CAD or INR at the Bank of Canada daily reference rate, check the dated history and '
-  'compare it with the amount charged to your card.',
+  'Look up Bank of Canada daily or annual average exchange rates. Convert USD, CAD or INR '
+  'and compare a dated purchase with the amount charged to your card.',
   {}),
  ('usd-to-cad',
   'USD to CAD Currency Converter',

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build a browser tool using Python's standard library; no network required."""
 from html import escape
+from annual import build_annual_page
 from search_pages import render_pages, PAGES
 import json
 from pathlib import Path
@@ -101,6 +102,7 @@ def build(root=ROOT):
             raise ValueError("Unresolved template placeholder in web/index.html")
         index.write_text(page, encoding="utf-8")
         render_pages(stage, tool, PAGES)
+        build_annual_page(stage, {k: v if on_coolcode else "" for k, v in reporting.items()}, tool)
         (stage / ".nojekyll").touch()
         if output.exists():
             shutil.rmtree(output)

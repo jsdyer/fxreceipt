@@ -3,28 +3,35 @@ on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    - cron: '27 10 1 * *'
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: fxreceipt-build-and-publish-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
     outputs:
       publish: ${{ steps.identity.outputs.publish }}
     steps:
       - uses: actions/checkout@v6
         with:
-          persist-credentials: false
+          persist-credentials: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - name: Refresh Bank of Canada annual rates
+        if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        run: python3 scripts/annual.py
       - name: Test the application
         run: node --test tests/*.test.mjs
       - name: Test the builder
@@ -49,6 +56,14 @@ jobs:
           python3 -m playwright install --with-deps chromium
       - name: Check application in a browser
         run: python3 tests/browser_smoke.py
+      - name: Record validated annual observations
+        if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        run: |
+          git add web/annual-rates.json
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Refresh Bank of Canada annual averages'
+            git push origin HEAD:main
+          fi
       - name: Save browser screenshots
         if: always()
         uses: actions/upload-artifact@v4

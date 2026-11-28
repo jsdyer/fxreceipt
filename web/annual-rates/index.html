@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bank of Canada annual average exchange rates · FX Receipt</title>
+<meta name="description" content="Look up annual exchange rates to Canadian dollars by year and currency. Convert an amount and check the Bank of Canada source.">
+<link rel="canonical" href="{{CANONICAL}}"><link rel="stylesheet" href="../style.css"><script type="module" src="./annual.mjs"></script>{{VISIT_COUNTER}}</head>
+<body><a class="skip" href="#lookup">Skip to annual rates</a><header class="site-head"><a class="brand" href="../">CoolCode<span> / FX Receipt</span></a><a href="../">Daily converter</a></header>
+<main><section class="quick-calc annual" id="lookup">
+<h1>Annual average exchange rates</h1>
+<p data-coolcode-commitments>No CoolCode account · No ads · <a href="/about/#our-commitments">How CoolCode works</a></p>
+<p>Choose a currency and calendar year to convert an amount to Canadian dollars at the Bank of Canada’s published annual rate.</p>
+<form id="annual-form" hidden><label>Currency<select id="annual-currency"></select></label><label>Calendar year<select id="annual-year"></select></label>
+<label>Amount in foreign currency<input id="annual-amount" type="number" min="0" step="any" value="100" inputmode="decimal"></label></form>
+<output id="annual-total" aria-live="polite">USD 100.00 = CAD {{CONVERSION}}</output>
+<p id="annual-detail">In {{LATEST}}, one US dollar averaged {{RATE}} Canadian dollars.</p>
+<p>For a purchase on a specific date, use the <a href="../">daily converter</a>. For Canadian tax reporting, the CRA generally uses the rate for the relevant day. It may accept a period average for certain income items. <a href="https://www.canada.ca/en/revenue-agency/services/tax/technical-information/income-tax/income-tax-folios-index/series-5-international-residency/series-5-international-residency-folio-4-foreign-currency/income-tax-folio-s5-f4-c1-income-tax-reporting-currency.html">CRA guidance, paragraphs 1.4 and 1.6.1</a>.</p>
+<h2>Rates by year</h2><p>Each rate is Canadian dollars per one unit of foreign currency. Years and currencies appear when the Bank publishes an observation. The modern annual series begins in 2017.</p>
+{{TABLES}}
+<p>Bank of Canada annual group checked <time datetime="{{CHECKED}}">{{CHECKED}}</time>. CoolCode checks monthly. The Bank normally publishes a new annual average on the last business day of the year. <a href="https://www.bankofcanada.ca/rates/exchange/annual-average-exchange-rates/">Annual exchange rates</a> · <a href="{{SOURCE}}">Official observations (JSON)</a></p>
+<p>All amounts and calculations stay in this tab.</p></section></main>
+<footer><a href="../">FX Receipt</a> · <a href="https://coolcode.ca/">CoolCode.ca</a> · {{ISSUE_LINK}}</footer></body></html>

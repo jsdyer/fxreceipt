@@ -85,6 +85,23 @@ def main():
                 page.locator("#clear").click()
                 assert page.locator("#result").is_hidden()
                 assert page.locator("#amount").input_value() == ""
+                annual = f"http://127.0.0.1:{server.server_port}/fxreceipt/annual-rates/"
+                page.goto(annual+"?year=2025&currency=USD")
+                assert "139.78" in page.locator("#annual-total").inner_text()
+                assert "1.3978 CAD" in page.locator("#annual-detail").inner_text()
+                page.locator("#annual-amount").fill("200")
+                assert "279.56" in page.locator("#annual-total").inner_text()
+                page.locator("#annual-currency").select_option("VND")
+                assert "No annual rate published" in page.locator("#annual-total").inner_text()
+                page.locator("#annual-year").select_option("2017")
+                assert "0.000057 CAD" in page.locator("#annual-detail").inner_text()
+                assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+                offline = browser.new_page(java_script_enabled=False)
+                offline.goto(annual)
+                offline.locator("details[data-year='2025'] summary").click()
+                assert "1.3978" in offline.locator("details[data-year='2025'] tbody").inner_text()
+                assert offline.locator("#annual-form").is_hidden()
+                offline.close()
                 assert not errors, errors
                 browser.close()
             print("Browser checks passed: API/manual comparison, earlier rate date, safe rendering, JSON round-trip, input invalidation and mobile layout")

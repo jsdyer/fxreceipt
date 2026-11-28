@@ -1,7 +1,7 @@
 {
   "id": "fxreceipt",
   "title": "Currency Converter & Card Charge Comparison",
-  "description": "Convert USD, CAD or INR at the Bank of Canada daily reference rate, check the dated history and compare it with the amount charged to your card.",
+  "description": "Convert foreign amounts at Bank of Canada daily or annual average rates and compare a dated purchase with the amount charged to your card.",
   "category": "money",
   "tags": [
     "currency",
@@ -17,6 +17,7 @@
   "access": "browser",
   "data_info": {
     "mode": "mixed",
-    "detail": "Bank of Canada daily observations for CAD, USD and INR, plus Frankfurter reference rates for the card comparison. Amounts stay local."
+    "detail": "Bank of Canada observations supply daily conversions and published annual CAD averages. Frankfurter supplies additional reference rates for the card comparison. Entered amounts stay local.",
+    "cadence": "Daily rates on demand; annual table checked monthly"
   }
 }
